@@ -1,7 +1,8 @@
-from sqlalchemy import Table, Column, Integer, String, Float, DateTime
+from sqlalchemy import Table, Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from app.database import metadata 
 
+#Current weather table
 weather_searches = Table(
     "weather_searches", 
     metadata, 
@@ -13,4 +14,18 @@ weather_searches = Table(
     Column("weather", String, nullable=False),
     Column("icon", String, nullable=True),
     Column("date_searched", DateTime(timezone=True), server_default=func.now()) #autofills with the current timestamp
+)
+
+#Forecast table
+forecast_searches = Table(
+    "forecast_searches", 
+    metadata,
+    Column("id", Integer, primary_key=True), 
+    Column("weather_id", Integer, ForeignKey("weather_searches.id")), #link to the main search
+    Column("datetime", DateTime, nullable=False), 
+    Column("temperature", Float, nullable=False), 
+    Column("feels_like", Float, nullable=False),
+    Column("humidity", Float, nullable=False),
+    Column("weather", String, nullable=False),
+    Column("icon", String, nullable=True)
 )
