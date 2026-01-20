@@ -1,5 +1,6 @@
 from datetime import datetime
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.concurrency import run_in_threadpool
 import requests
 import os
@@ -17,6 +18,14 @@ if not OPENWEATHER_API_KEY:
     raise RuntimeError("OPENWEATHER_API_KEY is not set")
 
 app = FastAPI(title = "Weather App API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def fetch_openweather_data(location: str):
     """
