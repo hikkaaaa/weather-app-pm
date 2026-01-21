@@ -13,7 +13,11 @@ weather_searches = Table(
     Column("humidity", Float, nullable=False),
     Column("weather", String, nullable=False),
     Column("icon", String, nullable=True),
-    Column("date_searched", DateTime(timezone=True), server_default=func.now()) #autofills with the current timestamp
+    Column("lat", Float, nullable=True),
+    Column("lon", Float, nullable=True),
+    Column("date_searched", DateTime(timezone=True), server_default=func.now()), #autofills with the current timestamp
+    Column("start_date", String, nullable=True), # User selected start date
+    Column("end_date", String, nullable=True)    # User selected end date
 )
 
 #Forecast table

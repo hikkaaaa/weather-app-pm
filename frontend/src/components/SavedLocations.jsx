@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import { getWeatherHistory, deleteWeatherRecord } from '../services/weatherService';
 
 const SavedLocations = ({ onSelect, refreshTrigger }) => {
@@ -49,11 +50,16 @@ const SavedLocations = ({ onSelect, refreshTrigger }) => {
                             onClick={(e) => handleDelete(e, record.id)}
                             title="Delete"
                         >
-                            &times;
+                            <Trash2 size={16} />
                         </button>
                         <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{record.location}</div>
                         <div style={{ fontSize: '2rem', margin: '0.5rem 0' }}>{Math.round(record.temperature)}°</div>
                         <div style={{ textTransform: 'capitalize', opacity: 0.8 }}>{record.weather}</div>
+                        {record.start_date && record.end_date && (
+                            <div style={{ fontSize: '0.9rem', color: '#ffd700', marginTop: '0.5rem' }}>
+                                Trip: {record.start_date} to {record.end_date}
+                            </div>
+                        )}
                         <div style={{ fontSize: '0.8rem', opacity: 0.6, marginTop: '1rem' }}>
                             {new Date(record.date_searched).toLocaleDateString()}
                         </div>

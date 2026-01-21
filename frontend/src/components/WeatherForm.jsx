@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Search } from 'lucide-react';
 
 const WeatherForm = ({ onSearch }) => {
     const [location, setLocation] = useState('');
@@ -16,12 +17,12 @@ const WeatherForm = ({ onSearch }) => {
             <input
                 type="text"
                 className="search-input"
-                placeholder="Search city, zip, or coordinates..."
+                placeholder="Enter city (e.g. Paris), zip code, coordinates, or landmark"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
             />
-            <button type="submit" className="search-button">
-                Search
+            <button type="submit" className="search-button" aria-label="Search">
+                <Search size={24} />
             </button>
         </form>
     );

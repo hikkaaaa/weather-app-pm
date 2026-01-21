@@ -36,9 +36,13 @@ export const saveWeather = async (location) => {
     }
 };
 
-export const saveForecast = async (location) => {
+export const saveForecast = async (location, startDate, endDate) => {
     try {
-        const response = await api.post(`/forecast/save`, null, { params: { location } });
+        const params = { location };
+        if (startDate) params.start_date = startDate;
+        if (endDate) params.end_date = endDate;
+
+        const response = await api.post(`/forecast/save`, null, { params });
         return response.data;
     } catch (error) {
         throw error;
@@ -81,4 +85,27 @@ export const refreshForecast = async (weatherId) => {
     } catch (error) {
         throw error;
     }
+};
+
+export const updateWeather = async (weatherId, location) => {
+    try {
+        const response = await api.put(`/weather/update/${weatherId}`, null, { params: { location } });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const getYouTubeVideos = async (location) => {
+    try {
+        const response = await api.get(`/media/youtube`, { params: { location } });
+        return response.data;
+    } catch (error) {
+        console.error("YouTube fetch error", error);
+        return [];
+    }
+};
+
+export const getExportUrl = (format) => {
+    return `${API_BASE_URL}/export/weather?format=${format}`;
 };

@@ -1,17 +1,20 @@
-import React from 'react';
+import { getWeatherIcon } from '../utils/iconMap';
 
 const WeatherDisplay = ({ weather }) => {
     if (!weather) return null;
 
-    const { city, temperature, feels_like, humidity, weather: description, icon } = weather;
-    const iconUrl = `https://openweathermap.org/img/wn/${icon}@4x.png`;
+    // weather.icon might be "01d", "04n" etc.
+    const { city, location, temperature, feels_like, humidity, weather: description, icon } = weather;
+    const displayName = city || location;
 
     return (
         <div className="glass-card">
             <h2>Current Weather</h2>
-            <div className="location-name">{city}</div>
-            <div className="weather-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <img src={iconUrl} alt={description} style={{ width: '100px', height: '100px' }} />
+            <div className="location-name">{displayName}</div>
+            <div className="weather-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+                <div style={{ transform: 'scale(1.5)' }}>
+                    {getWeatherIcon(icon)}
+                </div>
                 <div className="temp-huge">{Math.round(temperature)}°</div>
             </div>
             <div className="weather-desc">{description}</div>

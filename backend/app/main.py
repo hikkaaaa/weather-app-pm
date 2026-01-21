@@ -1,9 +1,12 @@
 from datetime import datetime
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.concurrency import run_in_threadpool
 import requests
 import os
+import csv
+import io
 from dotenv import load_dotenv
 from app.utils import parse_location_input
 from app.database import database, engine, metadata
@@ -13,6 +16,7 @@ from app.models.weather import weather_searches, forecast_searches
 load_dotenv()
 
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 
 if not OPENWEATHER_API_KEY: 
     raise RuntimeError("OPENWEATHER_API_KEY is not set")
@@ -86,7 +90,9 @@ def get_weather(location: str = Query(..., description="City, ZIP, coordinates, 
         "feels_like": data["main"]["feels_like"],
         "humidity": data["main"]["humidity"],
         "weather": data["weather"][0]["description"],
-        "icon": data["weather"][0]["icon"]
+        "icon": data["weather"][0]["icon"],
+        "lat": data["coord"]["lat"],
+        "lon": data["coord"]["lon"]
     }
 
 @app.get("/forecast")
@@ -141,7 +147,9 @@ async def save_weather(location:str):
         feels_like=data["main"]["feels_like"],
         humidity=data["main"]["humidity"],
         weather=data["weather"][0]["description"],
-        icon=data["weather"][0]["icon"]
+        icon=data["weather"][0]["icon"],
+        lat=data["coord"]["lat"],
+        lon=data["coord"]["lon"]
     )
     last_record_id = await database.execute(query)
     return {"message": "Weather saved", "id": last_record_id}
@@ -199,7 +207,7 @@ async def delete_weather(record_id: int):
 #CRUD WORKFLOW ON **5-day forecast** 
 #C - Create
 @app.post("/forecast/save")
-async def save_forecast(location: str):
+async def save_forecast(location: str, start_date: str = None, end_date: str = None):
     """
     Fetch current weather + 5-day forecast and save all to database
     """
@@ -213,7 +221,11 @@ async def save_forecast(location: str):
         feels_like=weather_data["main"]["feels_like"],
         humidity=weather_data["main"]["humidity"],
         weather=weather_data["weather"][0]["description"],
-        icon=weather_data["weather"][0]["icon"]
+        icon=weather_data["weather"][0]["icon"],
+        lat=weather_data["coord"]["lat"],
+        lon=weather_data["coord"]["lon"],
+        start_date=start_date,
+        end_date=end_date
     )
     weather_id = await database.execute(insert_weather)
 
@@ -306,3 +318,75 @@ async def delete_forecast(weather_id: int):
         weather_searches.delete().where(weather_searches.c.id == weather_id)
     )
     return {"message": "Weather + forecast deleted"}
+
+# EXTRA FEATURES
+
+def fetch_youtube_videos_sync(location: str):
+    if not YOUTUBE_API_KEY:
+        return []
+    
+    # Simple heuristic to improve search results
+    query = f"{location} travel guide"
+    url = "https://www.googleapis.com/youtube/v3/search"
+    params = {
+        "part": "snippet",
+        "q": query,
+        "key": YOUTUBE_API_KEY,
+        "maxResults": 3,
+        "type": "video"
+    }
+    
+    try:
+        response = requests.get(url, params=params)
+        if response.status_code != 200:
+            print(f"YouTube API Error: {response.text}")
+            return []
+            
+        data = response.json()
+        videos = []
+        for item in data.get("items", []):
+            videos.append({
+                "title": item["snippet"]["title"],
+                "videoId": item["id"]["videoId"],
+                "thumbnail": item["snippet"]["thumbnails"]["high"]["url"]
+            })
+        return videos
+    except Exception as e:
+        print(f"Error fetching YouTube videos: {e}")
+        return []
+
+@app.get("/media/youtube")
+async def get_youtube_videos(location: str):
+    videos = await run_in_threadpool(fetch_youtube_videos_sync, location)
+    return videos
+
+@app.get("/export/weather")
+async def export_weather(format: str = "json"):
+    query = weather_searches.select()
+    results = await database.fetch_all(query)
+    
+    # Convert database rows to dictionary list
+    data_list = [dict(row) for row in results]
+    
+    # Helper to serialize datetimes
+    for row in data_list:
+        for k, v in row.items():
+            if isinstance(v, datetime):
+                row[k] = v.isoformat()
+
+    if format.lower() == "csv":
+        output = io.StringIO()
+        if data_list:
+            keys = data_list[0].keys()
+            writer = csv.DictWriter(output, fieldnames=keys)
+            writer.writeheader()
+            writer.writerows(data_list)
+        
+        return Response(
+            content=output.getvalue(),
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=weather_history.csv"}
+        )
+        
+    else: # Default to JSON
+        return data_list

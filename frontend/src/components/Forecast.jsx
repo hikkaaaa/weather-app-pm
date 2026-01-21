@@ -1,4 +1,5 @@
 import React from 'react';
+import { getWeatherIcon } from '../utils/iconMap';
 
 const Forecast = ({ forecastData }) => {
     if (!forecastData || !forecastData.forecast) return null;
@@ -50,13 +51,12 @@ const Forecast = ({ forecastData }) => {
                 {dailyForecasts.map((item, index) => {
                     const dateObj = new Date(item.datetime);
                     const dayName = dayNames[dateObj.getDay()];
-                    const iconUrl = `https://openweathermap.org/img/wn/${item.icon}@2x.png`;
-
+                    
                     return (
                         <div key={index} className="forecast-day-card">
                             <div className="forecast-day-name">{dayName}</div>
-                            <div className="forecast-icon">
-                                <img src={iconUrl} alt={item.weather} />
+                            <div className="forecast-icon" style={{ margin: '0.5rem 0' }}>
+                                {getWeatherIcon(item.icon)}
                             </div>
                             <div style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>
                                 {Math.round(item.temperature)}°
